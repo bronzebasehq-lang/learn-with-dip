@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_wrongmode"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@drawable/btn_ghost"
+            android:textColor="@color/gold"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:id="@+id/quiz_box"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_qprogress"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Câu 1/5"
+                android:textSize="16sp"
+                android:textColor="@color/text_dim" />
+
+            <TextView
+                android:id="@+id/tv_qword"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="deploy"
+                android:textSize="34sp" android:textStyle="bold"
+                android:textColor="@color/text"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Nghĩa của từ này là?"
+                android:textSize="14sp"
+                android:textColor="@color/text_dim"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp" />
+
+            <Button android:id="@+id/opt0"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp" />
+            <Button android:id="@+id/opt1"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp" />
+            <Button android:id="@+id/opt2"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp" />
+            <Button android:id="@+id/opt3"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/btn_qnext"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Câu tiếp"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:visibility="gone"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/result_box"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="@drawable/card_bg"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/tv_qresult"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="@color/text" />
+
+            <Button
+                android:id="@+id/btn_qretry"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Làm quiz mới"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="16dp" />
+
+            <Button
+                android:id="@+id/btn_qlearn"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Về học tiếp"
+                android:background="@drawable/btn_ghost"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

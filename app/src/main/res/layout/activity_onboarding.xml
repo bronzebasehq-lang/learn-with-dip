@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Bước 1: tên -->
+        <LinearLayout
+            android:id="@+id/step1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="👋 Chào bạn!"
+                android:textSize="28sp" android:textStyle="bold"
+                android:textColor="@color/text" />
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Bạn tên gì?"
+                android:textSize="18sp"
+                android:textColor="@color/text_dim"
+                android:layout_marginTop="8dp" />
+            <EditText
+                android:id="@+id/et_name"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Nhập tên..."
+                android:textSize="20sp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/card_bg"
+                android:padding="16dp" />
+            <Button
+                android:id="@+id/btn_s1"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tiếp tục"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="24dp" />
+        </LinearLayout>
+
+        <!-- Bước 2: tuổi -->
+        <LinearLayout
+            android:id="@+id/step2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Bạn bao nhiêu tuổi?"
+                android:textSize="24sp" android:textStyle="bold"
+                android:textColor="@color/text" />
+            <EditText
+                android:id="@+id/et_age"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:hint="Ví dụ: 34"
+                android:inputType="number"
+                android:textSize="20sp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/card_bg"
+                android:padding="16dp" />
+            <Button
+                android:id="@+id/btn_s2"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tiếp tục"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="24dp" />
+        </LinearLayout>
+
+        <!-- Bước 3: muốn học gì -->
+        <LinearLayout
+            android:id="@+id/step3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Bạn muốn học gì?"
+                android:textSize="24sp" android:textStyle="bold"
+                android:textColor="@color/text" />
+            <Button android:id="@+id/goal1"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tiếng Anh chuyên ngành AI/Tech/Code"
+                android:layout_marginTop="16dp" />
+            <Button android:id="@+id/goal2"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tiếng Anh giao tiếp"
+                android:layout_marginTop="12dp" />
+            <Button android:id="@+id/goal3"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Từ vựng dev cơ bản"
+                android:layout_marginTop="12dp" />
+            <Button
+                android:id="@+id/btn_s3"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Tiếp tục"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="24dp" />
+        </LinearLayout>
+
+        <!-- Bước 4: mỗi ngày mấy phút -->
+        <LinearLayout
+            android:id="@+id/step4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Mỗi ngày dành mấy phút?"
+                android:textSize="24sp" android:textStyle="bold"
+                android:textColor="@color/text" />
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Số phút = số từ mỗi buổi học"
+                android:textSize="14sp"
+                android:textColor="@color/text_dim"
+                android:layout_marginTop="4dp" />
+            <Button android:id="@+id/min5"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="5 phút (nhẹ nhàng)"
+                android:layout_marginTop="16dp" />
+            <Button android:id="@+id/min10"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="10 phút (đều đặn)"
+                android:layout_marginTop="12dp" />
+            <Button android:id="@+id/min20"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="20 phút (nghiêm túc)"
+                android:layout_marginTop="12dp" />
+            <Button
+                android:id="@+id/btn_start"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Bắt đầu học 🚀"
+                android:background="@drawable/btn_primary"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="24dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
