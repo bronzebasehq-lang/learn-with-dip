@@ -1,41 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Widget v3 (Minh 15/10): mascot TO 88dp ôm góc bong bóng text, caption to rõ,
+     tối đa ~15 TỪ, KHÔNG chi tiết từng ngày. Mascot vẽ sau bong bóng nên đè lên góc trái = ôm text. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
     android:background="@drawable/widget_bg"
-    android:padding="12dp">
+    android:padding="8dp">
 
-    <ImageView
-        android:id="@+id/w_mascot"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:src="@drawable/mascot_happy" />
-
+    <!-- Bong bóng text: chừa chỗ bên trái cho mascot đè lên -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:id="@+id/w_bubble"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="64dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="2dp"
         android:orientation="vertical"
-        android:layout_marginStart="12dp">
+        android:background="@drawable/widget_bubble"
+        android:paddingStart="28dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/w_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tới giờ học rồi!"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/w_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔥 0"
-            android:textSize="22sp"
+            android:layout_marginTop="2dp"
+            android:text="🔥 0 ngày"
+            android:textSize="15sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-
-        <TextView
-            android:id="@+id/w_nudge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chào bạn, tới giờ học rồi!"
-            android:textSize="14sp"
-            android:textColor="#C4B5FD" />
+            android:textColor="#FDE68A" />
     </LinearLayout>
-</LinearLayout>
+
+    <!-- Mascot TO 88dp, đè lên góc dưới-trái của bong bóng = ôm text, hòa trộn với chữ -->
+    <ImageView
+        android:id="@+id/w_mascot"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginBottom="0dp"
+        android:src="@drawable/mascot_sleepy"
+        android:contentDescription="Dip" />
+</RelativeLayout>
