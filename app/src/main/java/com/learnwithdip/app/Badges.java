@@ -13,11 +13,11 @@ public class Badges {
         "Thuộc 10+ từ",
         "Thuộc 25+ từ",
         "Thuộc 40+ từ",
-        "Thuộc 50+ từ",
-        "Thuộc hết 60 từ",
-        "60 từ + streak 7+ ngày"
+        "Thuộc 55+ từ",
+        "Thuộc hết 70 từ",
+        "70 từ + streak 7+ ngày"
     };
-    private static final int[] WORD_THRESH = {0, 10, 25, 40, 50, 60};
+    private static final int[] WORD_THRESH = {0, 10, 25, 40, 55, 70};
 
     /** Trả về index huy hiệu hiện tại (0..6). */
     public static int index(int learnedCount, int streak) {
