@@ -25,7 +25,7 @@ Mascot **Dip**: ninja bot đen số 6 + mắt chibi tròn, đổi biểu cảm t
 
 ### Cách 1 — Cài APK có sẵn
 
-Tải file `build/learn-with-dip-v3.apk` (hoặc từ mục Releases), chép sang điện thoại Android 8.0+ (API 26+), mở file để cài (cho phép "cài đặt từ nguồn không xác định" nếu máy hỏi).
+Tải file APK đã build sẵn trong `build/` (xây từ source bằng `./build.sh` bên dưới), chép sang điện thoại Android 8.0+ (API 26+), mở file để cài (cho phép "cài đặt từ nguồn không xác định" nếu máy hỏi).
 
 ### Cách 2 — Build từ source
 
