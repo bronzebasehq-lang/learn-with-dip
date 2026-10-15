@@ -18,6 +18,15 @@ Mascot **Dip**: ninja bot đen số 6 + mắt chibi tròn, đổi biểu cảm t
 - **Onboarding** lần đầu + **Hồ sơ** cá nhân hóa.
 - Nhắc học hàng ngày qua receiver (không server, không push từ xa).
 
+## Mascot Dip (v4.1 — mockup 4-5-6)
+
+- **Trang Học**: mascot **TO 3x** — 168dp (gấp 3 widget 56dp) trong **đĩa glow tím** + bong bóng `"Let's learn! • Học thôi nào!"`, đứng đầu trang, không che nội dung. Đổi biểu cảm theo phase: vẫy tay (flashcard) → suy nghĩ (ôn tập) → bất ngờ (đọc hiểu + quiz) → ăn mừng (sau khi nộp bài).
+- **8 biểu cảm / hành động** (mockup 5), thể hiện bằng **animation trên đúng 4 file art hiện có** (`mascot` / `mascot_happy` / `mascot_sleepy` / `mascot_party`), không vẽ art mới: **chạy** (vệt chuyển động + nghiêng người) / **nhảy** (nảy + bóng) / **ăn mừng** (lắc + confetti) / **suy nghĩ** (nghiêng đầu + `?`) / **ngủ** (thở chậm + `Z z`) / **vẫy tay** (lắc + 👋) / **bất ngờ** (phình to + `!`) / **cổ vũ** (nhảy + lắc + ★).
+- **Mascot ở mọi trang học**: Ôn tập 96dp (suy nghĩ → bất ngờ → cổ vũ/ăn mừng theo điểm), Hồ sơ 120dp (ngủ nếu chưa học hôm nay / ăn mừng nếu streak ≥ 7 / cổ vũ nếu streak ≥ 3 / vẫy tay còn lại), Onboarding 96dp vẫy tay chào.
+- **Chuyển cảnh** (mockup 6): khi bấm chuyển tab, Dip **chạy ngang màn hình** kéo theo vệt tím, nội dung trang mới được đổi đúng lúc Dip ở giữa màn hình (trông như Dip kéo nội dung mới vào).
+- **Widget KHÔNG đổi**: vẫn mascot nhỏ 56dp như v4.
+- Code: `MascotView.java` (factory + animation + chuyển cảnh), `mascot_glow.xml` (đĩa glow tím).
+
 ## Nội dung
 
 `app/src/main/assets/lessons.json` — **7 ngày × 10 thuật ngữ = 70 từ** AI/Tech, kèm đoạn đọc hiểu + quiz mỗi ngày.
@@ -63,11 +72,12 @@ Toolchain: `~/android-sdk` (build-tools 34.0.0, platform android-34), `aapt2` + 
 app/src/main/
   AndroidManifest.xml
   java/com/learnwithdip/app/
-    MainActivity.java        # bottom nav + mở bài học hôm nay từ widget
-    OnboardingActivity.java  # onboarding lần đầu
-    LearnFragment.java       # tab Học (flashcard 1 từ/lần + review + ôn tập ngắt quãng + quiz)
-    QuizFragment.java        # tab Quiz
-    ProfileFragment.java     # tab Hồ sơ + huy hiệu + ghim widget
+    MainActivity.java        # bottom nav + mở bài học hôm nay từ widget + chuyển cảnh mascot
+    OnboardingActivity.java  # onboarding lần đầu (+ mascot vẫy tay chào)
+    LearnFragment.java       # tab Học (flashcard 1 từ/lần + review + ôn tập ngắt quãng + quiz + mascot hero 3x)
+    QuizFragment.java        # tab Quiz (+ mascot 96dp)
+    ProfileFragment.java     # tab Hồ sơ + huy hiệu + ghim widget (+ mascot 120dp theo streak)
+    MascotView.java          # mascot 8 biểu cảm + chuyển cảnh chạy ngang (v4.1, mockup 4-5-6)
     Store.java               # SharedPreferences: onboarding, từ đã thuộc/sai, streak
     Lessons.java             # nạp lessons.json (7 ngày)
     Badges.java              # logic huy hiệu Newbie → Legend

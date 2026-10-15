@@ -30,6 +30,8 @@ public class LearnFragment extends Fragment {
     private LinearLayout box;
     private LinearLayout phaseBox;
     private LinearLayout resultBox;
+    /** Mascot hero 3x (mockup 4) ở đầu trang Học — đổi biểu cảm theo phase. */
+    private View heroView;
 
     // Flashcard state
     private int cardIndex = 0;
@@ -56,6 +58,12 @@ public class LearnFragment extends Fragment {
                 "Chào " + store.getName() + "! Bài học hôm nay có 10 thuật ngữ mới \uD83C\uDF93",
                 14, 0xFF9CA3AF, false);
         box.addView(tvSub);
+
+        // Mascot hero TO 3x (168dp = 3x widget 56dp, mockup 4): đĩa glow tím +
+        // bong bóng "Let's learn! • Học thôi nào!", sau tiêu đề, không che nội dung.
+        heroView = MascotView.create(getActivity(), MascotView.Mood.WAVING, 168,
+                "Let's learn! • Học thôi nào!");
+        box.addView(heroView);
 
         // Khối ôn tập đến hạn (spaced repetition) — chỉ hiện khi có từ đến hạn
         List<String> dueWords = store.getDueReviews();
@@ -113,6 +121,9 @@ public class LearnFragment extends Fragment {
     // ---------- Phase A: Flashcard 1 từ / lần ----------
     private void showFlashcard() {
         phaseBox.removeAllViews();
+        if (cardIndex == 0) {
+            MascotView.update(heroView, MascotView.Mood.WAVING, "Let's learn! • Học thôi nào!");
+        }
         if (cardIndex >= lesson.terms.size()) {
             showReview();
             return;
@@ -174,6 +185,7 @@ public class LearnFragment extends Fragment {
     // ---------- Phase B: Trang ôn tập ----------
     private void showReview() {
         phaseBox.removeAllViews();
+        MascotView.update(heroView, MascotView.Mood.THINKING, "Ôn lại nhé! • Review time!");
 
         TextView tvHead = UiKit.text(getActivity(), "REVIEW", 16, 0xFFC4B5FD, true);
         LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
@@ -229,6 +241,7 @@ public class LearnFragment extends Fragment {
     // ---------- Phase C: Đoạn đọc hiểu + quiz (giữ như cũ) ----------
     private void showQuizSection() {
         phaseBox.removeAllViews();
+        MascotView.update(heroView, MascotView.Mood.SURPRISED, "Sẵn sàng chưa? • Ready?");
 
         // Đoạn đọc hiểu
         phaseBox.addView(UiKit.sectionHeader(getActivity(), "\uD83D\uDCD6 Đoạn đọc hiểu"));
@@ -385,6 +398,7 @@ public class LearnFragment extends Fragment {
         resultBox.addView(bMore);
 
         resultBox.setVisibility(View.VISIBLE);
+        MascotView.update(heroView, MascotView.Mood.CELEBRATING, "Giỏi lắm! • Great job!");
     }
 
     // ---------- Ôn tập đến hạn (spaced repetition) ----------
@@ -395,6 +409,9 @@ public class LearnFragment extends Fragment {
 
     private void renderDueCard() {
         phaseBox.removeAllViews();
+        if (duePos == 0) {
+            MascotView.update(heroView, MascotView.Mood.THINKING, "Ôn lại nhé! • Review time!");
+        }
         if (duePos >= dueTerms.size()) {
             TextView tvDone = UiKit.text(getActivity(),
                     "Xong! Đã ôn " + dueTerms.size() + " từ \uD83D\uDD01",

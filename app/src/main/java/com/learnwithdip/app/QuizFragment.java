@@ -18,6 +18,8 @@ public class QuizFragment extends Fragment {
 
     private LinearLayout box;
     private Store store;
+    /** Mascot trang Ôn tập (96dp) — THINKING ở flashcard, SURPRISED ở quiz, CHEERING/CELEBRATING ở kết quả. */
+    private View quizMascot;
 
     // Flashcard state
     private List<Lessons.Term> deck = new ArrayList<>();
@@ -60,6 +62,11 @@ public class QuizFragment extends Fragment {
         cardBox.setOrientation(LinearLayout.VERTICAL);
         cardBox.setId(View.generateViewId());
         box.addView(cardBox);
+
+        // Mascot 96dp sau cardBox (giữ cardBox ở index 1 cho cardBox()).
+        quizMascot = MascotView.create(getActivity(), MascotView.Mood.THINKING, 96,
+                "Ôn lại cho chắc nhé! • Review time!");
+        box.addView(quizMascot);
 
         if (deck.isEmpty()) {
             TextView tvDone = UiKit.text(getActivity(),
@@ -170,11 +177,16 @@ public class QuizFragment extends Fragment {
         TextView tvTitle = UiKit.text(getActivity(), "📝 Ôn từ đã sai",
                 20, 0xFFFFFFFF, true);
         box.addView(tvTitle);
+
+        // Mascot 96dp ở index 1 — renderQuestion/showQuizResult chỉ xóa từ index 2.
+        quizMascot = MascotView.create(getActivity(), MascotView.Mood.SURPRISED, 96,
+                "Trả lời thật chắc nhé! • You got this!");
+        box.addView(quizMascot);
         renderQuestion();
     }
 
     private void renderQuestion() {
-        while (box.getChildCount() > 1) box.removeViewAt(1);
+        while (box.getChildCount() > 2) box.removeViewAt(2);
         if (qi >= qTerms.size()) { showQuizResult(); return; }
         answered = false;
         Lessons.Term t = qTerms.get(qi);
@@ -246,7 +258,7 @@ public class QuizFragment extends Fragment {
     }
 
     private void showQuizResult() {
-        while (box.getChildCount() > 1) box.removeViewAt(1);
+        while (box.getChildCount() > 2) box.removeViewAt(2);
         store.incQuiz();
         WidgetUpdater.update(getActivity());
 
@@ -276,6 +288,12 @@ public class QuizFragment extends Fragment {
                 15, 0xFF9CA3AF, false);
         tvNudge.setGravity(Gravity.CENTER);
         box.addView(tvNudge);
+
+        // Mascot ăn mừng / cổ vũ theo điểm (giữ ở index 1, trên kết quả).
+        boolean perfect = !qTerms.isEmpty() && score == qTerms.size();
+        MascotView.update(quizMascot,
+                perfect ? MascotView.Mood.CELEBRATING : MascotView.Mood.CHEERING,
+                perfect ? "Xuất sắc! • Perfect!" : "Cố lên! • Keep going!");
 
         Button bBack = new Button(getActivity());
         bBack.setText("← Về flashcard");

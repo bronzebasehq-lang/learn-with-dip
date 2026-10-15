@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Đĩa tròn tím sau lưng mascot (mockup 4: vòng glow tím, nền #3B2E7A + viền accent). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#3B2E7A" />
+    <stroke android:width="2dp" android:color="#8B5CF6" />
+</shape>

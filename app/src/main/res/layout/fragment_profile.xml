@@ -18,6 +18,14 @@
             android:textSize="26sp" android:textStyle="bold"
             android:textColor="@color/text" />
 
+        <!-- Mascot Dip (v4.1): biểu cảm theo streak, đặt sau lời chào, trên thẻ huy hiệu -->
+        <LinearLayout
+            android:id="@+id/mascot_slot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

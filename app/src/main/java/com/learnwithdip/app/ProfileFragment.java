@@ -25,6 +25,26 @@ public class ProfileFragment extends Fragment {
         int bi = Badges.index(learned, streak);
 
         ((TextView) v.findViewById(R.id.tv_hello)).setText("Chào " + store.getName() + "!");
+
+        // Mascot 120dp: ngủ nếu chưa học hôm nay, ăn mừng nếu streak >= 7,
+        // cổ vũ nếu streak >= 3, vẫy tay chào còn lại.
+        MascotView.Mood mood;
+        String bubble;
+        if (!store.studiedToday()) {
+            mood = MascotView.Mood.SLEEPING;
+            bubble = "Dip đang ngủ… học để đánh thức Dip! • Wake Dip up!";
+        } else if (streak >= 7) {
+            mood = MascotView.Mood.CELEBRATING;
+            bubble = "Streak 7+! Đỉnh! • Amazing streak!";
+        } else if (streak >= 3) {
+            mood = MascotView.Mood.CHEERING;
+            bubble = "Streak đang cháy! • Streak on fire!";
+        } else {
+            mood = MascotView.Mood.WAVING;
+            bubble = "Chào bro! • Hey there!";
+        }
+        ((android.widget.LinearLayout) v.findViewById(R.id.mascot_slot))
+                .addView(MascotView.create(getActivity(), mood, 120, bubble));
         ((TextView) v.findViewById(R.id.tv_badge)).setText(Badges.ICONS[bi] + " " + Badges.NAMES[bi]);
         ((TextView) v.findViewById(R.id.tv_badge_desc)).setText(Badges.DESCS[bi]);
         ((TextView) v.findViewById(R.id.tv_next_goal)).setText(Badges.nextGoal(learned, streak));

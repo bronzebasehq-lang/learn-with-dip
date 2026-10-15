@@ -14,6 +14,8 @@ import java.util.Calendar;
 
 public class MainActivity extends Activity {
     private Button bLearn, bQuiz, bProfile;
+    /** Chặn bấm nav liên tục khi mascot đang chạy chuyển cảnh. */
+    private boolean transitioning;
 
     @Override
     protected void onCreate(Bundle s) {
@@ -27,9 +29,9 @@ public class MainActivity extends Activity {
         bLearn = findViewById(R.id.nav_learn);
         bQuiz = findViewById(R.id.nav_quiz);
         bProfile = findViewById(R.id.nav_profile);
-        bLearn.setOnClickListener(v -> show(new LearnFragment(), bLearn));
-        bQuiz.setOnClickListener(v -> show(new QuizFragment(), bQuiz));
-        bProfile.setOnClickListener(v -> show(new ProfileFragment(), bProfile));
+        bLearn.setOnClickListener(v -> showWithTransition(new LearnFragment(), bLearn));
+        bQuiz.setOnClickListener(v -> showWithTransition(new QuizFragment(), bQuiz));
+        bProfile.setOnClickListener(v -> showWithTransition(new ProfileFragment(), bProfile));
         show(new LearnFragment(), bLearn);
 
         // Quyền thông báo (Android 13+) + lên lịch nhắc 8h sáng
@@ -70,8 +72,20 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void goQuiz() { show(new QuizFragment(), bQuiz); }
-    public void goLearn() { show(new LearnFragment(), bLearn); }
+    /**
+     * Chuyển trang kiểu mockup 6: Dip chạy ngang màn hình, nội dung mới được
+     * đổi đúng lúc Dip ở giữa (Dip "kéo" nội dung mới vào).
+     */
+    private void showWithTransition(Fragment f, Button active) {
+        if (transitioning) return;
+        transitioning = true;
+        MascotView.playRunAcross(this, () -> show(f, active));
+        new android.os.Handler(android.os.Looper.getMainLooper())
+                .postDelayed(() -> transitioning = false, 750);
+    }
+
+    public void goQuiz() { showWithTransition(new QuizFragment(), bQuiz); }
+    public void goLearn() { showWithTransition(new LearnFragment(), bLearn); }
 
     @Override
     protected void onResume() {

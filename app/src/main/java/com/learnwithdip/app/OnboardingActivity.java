@@ -26,6 +26,9 @@ public class OnboardingActivity extends Activity {
         step3 = findViewById(R.id.step3);
         step4 = findViewById(R.id.step4);
 
+        // Mascot vẫy tay chào ở đầu onboarding.
+        MascotView.animate(findViewById(R.id.onboarding_mascot), MascotView.Mood.WAVING);
+
         EditText etName = findViewById(R.id.et_name);
         EditText etAge = findViewById(R.id.et_age);
 
