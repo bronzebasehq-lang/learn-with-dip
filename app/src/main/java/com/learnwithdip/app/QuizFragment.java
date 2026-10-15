@@ -141,6 +141,7 @@ public class QuizFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         bKnown.setOnClickListener(x -> {
             store.addLearned(t.word);
+            store.scheduleNew(t.word);
             store.markStudied();
             WidgetUpdater.update(getActivity());
             pos++;

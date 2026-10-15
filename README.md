@@ -5,13 +5,15 @@ App Android tự học từ vựng tiếng Anh chuyên ngành **AI / Tech** mỗ
 
 Mascot **Dip**: ninja bot đen số 6 + mắt chibi tròn, đổi biểu cảm theo trạng thái học.
 
-## Tính năng (v3)
+## Tính năng (v4)
 
 - **Bài học mỗi ngày**: Day N + chủ đề, **10 thuật ngữ** — mỗi từ có từ + IPA + loại từ + nghĩa tiếng Việt + ví dụ tiếng Anh + dịch tiếng Việt.
+- **Flashcard 1 từ / lần** (chống quá tải): 1 từ to + IPA + nghĩa tiếng Việt + nút loa phát âm + 1 ví dụ duy nhất + nút **NEXT** → từ tiếp theo. **70 file MP3 bundle offline** trong app.
+- **Trang ôn tập** sau khi hết 10 từ: danh sách từ vừa học (tiếng Anh chính + giải thích tiếng Việt) + nút **START QUIZ**.
+- **Ôn tập ngắt quãng (spaced repetition)**: từ đã học tự hiện lại sau **1 / 3 / 7 ngày**; khối "Ôn tập đến hạn" ở đầu tab Học, chấm "Nhớ rồi ✓" / "Chưa nhớ" để lên stage hoặc ôn lại ngày mai.
 - **Đoạn đọc hiểu** dùng đúng từ trong bài + bản dịch tiếng Việt.
 - **Quiz trắc nghiệm** đọc hiểu theo bài học trong ngày (không XP, không coin).
-- **Flashcard**: chạm để lật nghĩa, nút loa phát âm mọi từ — **70 file MP3 bundle offline** trong app.
-- **Widget màn hình chính (v3)**: mascot TO (88dp) ôm bong bóng text; caption to rõ, đổi mỗi ngày, tối đa **15 từ**, không chi tiết từng ngày; nhấn widget mở thẳng bài học hôm nay. Mascot 4 biểu cảm: buồn ngủ (chưa học) / vui / mặt chính / ăn mừng (streak ≥ 7).
+- **Widget màn hình chính (v4)**: mascot NHỎ (56dp) ôm bong bóng text; caption **tiếng Anh**, đổi mỗi ngày, tối đa **15 từ**, không chi tiết từng ngày; nhấn widget mở thẳng bài học hôm nay. Mascot 4 biểu cảm: buồn ngủ (chưa học) / vui / mặt chính / ăn mừng (streak ≥ 7).
 - **Streak** (chuỗi ngày học liên tiếp) + **huy hiệu** Newbie → Legend.
 - **Onboarding** lần đầu + **Hồ sơ** cá nhân hóa.
 - Nhắc học hàng ngày qua receiver (không server, không push từ xa).
@@ -37,12 +39,18 @@ Không dùng Gradle (daemon hỏng trên VM build). Build thủ công bằng `bu
 
 Toolchain: `~/android-sdk` (build-tools 34.0.0, platform android-34), `aapt2` + `javac` + `d8` + `apksigner`. APK được ký bằng debug keystore tự tạo trong `build/` (chỉ để dev/test, không dùng cho Play Store).
 
-## Widget (v3)
+## Widget (v4)
 
-- Layout: `app/src/main/res/layout/widget_loop.xml` — RelativeLayout, mascot 88dp đè lên góc trái bong bóng text (hiệu ứng "ôm text").
-- Logic: `app/src/main/java/com/learnwithdip/app/WidgetUpdater.java` — chọn mascot theo trạng thái, caption nudge ngắn xoay theo ngày trong năm, giới hạn cứng `capWords(..., 15)` (15 từ, không phải ký tự).
-- Kích thước tối thiểu: `app/src/main/res/xml/widget_info.xml` — 250dp × 120dp.
+- Layout: `app/src/main/res/layout/widget_loop.xml` — RelativeLayout, mascot 56dp đè lên góc trái bong bóng text (hiệu ứng "ôm text").
+- Logic: `app/src/main/java/com/learnwithdip/app/WidgetUpdater.java` — chọn mascot theo trạng thái, caption nudge **tiếng Anh** ngắn xoay theo ngày trong năm, giới hạn cứng `capWords(..., 15)` (15 từ, không phải ký tự).
+- Kích thước tối thiểu: `app/src/main/res/xml/widget_info.xml` — 180dp × 80dp.
 - Trạng thái mascot: `mascot_sleepy` (chưa học) / `mascot_happy` (đã học, streak < 3) / `mascot` mặt chính (streak 3–6) / `mascot_party` (streak ≥ 7).
+
+## Ôn tập ngắt quãng (spaced repetition)
+
+- Từ mới học vào hàng đợi ôn: hiện lại sau **1 → 3 → 7 ngày** (nhớ rồi thì lên stage, quên thì về stage 0, ôn lại ngày mai). Thuộc chắc sau mốc 7 ngày thì rời hàng đợi.
+- Lưu local trong SharedPreferences (`Store.java`: `scheduleNew()` / `reviewWord()` / `getDueReviews()`), không mạng.
+- Khối "Ôn tập đến hạn" ở đầu tab Học (`LearnFragment.java`) khi có từ đến hạn; từ đã thuộc trước bản này được migrate 1 lần vào hàng đợi (ôn ngày mai).
 
 ## Đổi tên app / mascot
 
@@ -57,7 +65,7 @@ app/src/main/
   java/com/learnwithdip/app/
     MainActivity.java        # bottom nav + mở bài học hôm nay từ widget
     OnboardingActivity.java  # onboarding lần đầu
-    LearnFragment.java       # tab Học (flashcard + phát âm)
+    LearnFragment.java       # tab Học (flashcard 1 từ/lần + review + ôn tập ngắt quãng + quiz)
     QuizFragment.java        # tab Quiz
     ProfileFragment.java     # tab Hồ sơ + huy hiệu + ghim widget
     Store.java               # SharedPreferences: onboarding, từ đã thuộc/sai, streak

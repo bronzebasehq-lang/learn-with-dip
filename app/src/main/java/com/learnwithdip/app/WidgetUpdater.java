@@ -9,10 +9,12 @@ import android.widget.RemoteViews;
 import java.util.Calendar;
 
 /**
- * Widget v3 (Minh 15/10): mascot TO ôm bong bóng text + caption to rõ.
- * Caption: câu nudge ngắn, đổi mỗi ngày, TỐI ĐA 15 TỪ (words, không phải ký tự),
+ * Widget v4 (Minh 15/10, duyệt theo mockup 1): NHỎ lại như bản cũ (180x80dp,
+ * mascot 56dp ôm bong bóng text) + TIẾNG ANH hoàn toàn.
+ * Caption: câu nudge tiếng Anh ngắn, đổi mỗi ngày, TỐI ĐA 15 TỪ (words, không phải ký tự),
  * KHÔNG chi tiết từng ngày (không Day N / chủ đề / số từ).
  * Mascot 4 biểu cảm: sleepy (chưa học) / happy / main / party (streak >= 7).
+ * Mascot TO 3x + mascot mọi trang là phần khác, KHÔNG build ở đây.
  */
 public class WidgetUpdater {
     /** Giới hạn cứng: tối đa 15 từ, thừa thì cắt + "…". */
@@ -30,23 +32,23 @@ public class WidgetUpdater {
         return b.append("…").toString();
     }
 
-    /** Caption chưa học — xoay theo ngày trong năm, mỗi câu <= 6 từ. */
+    /** Caption chưa học — tiếng Anh, xoay theo ngày trong năm, mỗi câu <= 6 từ. */
     static final String[] TODO = {
-        "Tới giờ học rồi!",
-        "Học 10 từ mới thôi!",
-        "Dip đợi bạn học bài!",
-        "Hôm nay học gì nào?",
-        "10 từ mới, vào học thôi!",
-        "Đừng để Dip đợi lâu!",
-        "Mở app, học bài nào!"
+        "Time to learn!",
+        "10 new words await!",
+        "Dip is waiting for you!",
+        "Learn 10 new words today!",
+        "Don't keep Dip waiting!",
+        "Open the app, let's learn!",
+        "A new lesson is ready!"
     };
 
-    /** Caption đã học xong — xoay theo ngày trong năm, mỗi câu <= 6 từ. */
+    /** Caption đã học xong — tiếng Anh, xoay theo ngày trong năm, mỗi câu <= 6 từ. */
     static final String[] DONE = {
-        "Đã học xong, giỏi lắm!",
-        "Xong bài rồi, giỏi quá!",
-        "Xong rồi, mai gặp nhé!",
-        "Chuỗi vẫn cháy, giữ nhé!"
+        "Done today, great job!",
+        "Lesson complete, well done!",
+        "See you tomorrow!",
+        "Streak is on fire, keep it up!"
     };
 
     public static void update(Context c) {
@@ -79,7 +81,7 @@ public class WidgetUpdater {
         for (int id : ids) {
             RemoteViews rv = new RemoteViews(c.getPackageName(), R.layout.widget_loop);
             rv.setImageViewResource(R.id.w_mascot, mascot);
-            rv.setTextViewText(R.id.w_streak, "\uD83D\uDD25 " + streak + " ngày");
+            rv.setTextViewText(R.id.w_streak, "\uD83D\uDD25 STREAK " + streak);
             rv.setTextViewText(R.id.w_caption, caption);
             // Nhấn widget -> mở thẳng bài học hôm nay
             Intent i = new Intent(c, MainActivity.class);
