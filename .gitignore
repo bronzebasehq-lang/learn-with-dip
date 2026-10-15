@@ -1,0 +1,10 @@
+# Build outputs — never commit
+build/
+releases/
+*.apk
+*.idsig
+# Local / IDE
+local.properties
+.idea/
+*.iml
+.DS_Store
