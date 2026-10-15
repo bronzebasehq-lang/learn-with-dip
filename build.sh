@@ -1,6 +1,6 @@
 #!/bin/bash
 # Manual APK build (no Gradle — Gradle daemon is broken in this VM).
-# Usage: ./build.sh   -> outputs build/learn-with-dip.apk
+# Usage: ./build.sh   -> outputs build/learn-with-dip-v3.apk
 set -e
 cd "$(dirname "$0")"
 ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
@@ -17,6 +17,7 @@ $BT/aapt2 link -o build/base.apk \
   -I "$PLATFORM" \
   --manifest app/src/main/AndroidManifest.xml \
   --java build/gen \
+  -A app/src/main/assets \
   --min-sdk-version 26 --target-sdk-version 34 \
   build/compiled_res.zip
 
@@ -41,8 +42,8 @@ if [ ! -f build/debug.keystore ]; then
 fi
 $BT/apksigner sign --ks build/debug.keystore \
   --ks-pass pass:android --key-pass pass:android \
-  --out build/learn-with-dip.apk build/aligned.apk
+  --out build/learn-with-dip-v3.apk build/aligned.apk
 
 echo "== verify =="
-$BT/apksigner verify build/learn-with-dip.apk && echo "SIGNED OK"
-ls -la build/learn-with-dip.apk
+$BT/apksigner verify build/learn-with-dip-v3.apk && echo "SIGNED OK"
+ls -la build/learn-with-dip-v3.apk
