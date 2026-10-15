@@ -3,6 +3,7 @@ package com.learnwithdip.app;
 import android.content.Context;
 import android.content.SharedPreferences;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,7 +25,25 @@ public class Store {
                 .putInt("age", age)
                 .putString("goal", goal)
                 .putInt("minutes", minutes)
+                .putString("onboardDate", LocalDate.now().toString())
                 .apply();
+    }
+
+    /** Ngày học hiện tại (1..7, tự xoay vòng sau 7 ngày). */
+    public int getDayIndex() {
+        String start = sp.getString("onboardDate", "");
+        if (start.isEmpty()) {
+            start = LocalDate.now().toString();
+            sp.edit().putString("onboardDate", start).apply();
+        }
+        long diff;
+        try {
+            diff = ChronoUnit.DAYS.between(LocalDate.parse(start), LocalDate.now());
+        } catch (Exception e) {
+            diff = 0;
+        }
+        if (diff < 0) diff = 0;
+        return (int) (diff % 7) + 1;
     }
 
     public String getName() { return sp.getString("name", "bạn"); }
