@@ -4,7 +4,6 @@ import android.app.Fragment;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,7 +30,7 @@ public class ProfileFragment extends Fragment {
         ((TextView) v.findViewById(R.id.tv_next_goal)).setText(Badges.nextGoal(learned, streak));
         ((TextView) v.findViewById(R.id.tv_streak)).setText("\uD83D\uDD25 Streak: " + streak + " ngày");
         ((TextView) v.findViewById(R.id.tv_stats)).setText(
-                "Từ đã thuộc: " + learned + "/" + Words.N + "\n" +
+                "Từ đã thuộc: " + learned + "/" + Lessons.totalTerms(getActivity()) + "\n" +
                 "Quiz đã làm: " + store.getQuizCount() + " lần\n" +
                 "Từ cần ôn: " + store.getWrong().size());
 
@@ -48,12 +47,7 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-        // Nút test: làm lại onboarding
-        v.findViewById(R.id.btn_reset).setOnClickListener(x -> {
-            store.resetAll();
-            startActivity(new Intent(getActivity(), OnboardingActivity.class));
-            getActivity().finish();
-        });
+        // (Nút làm lại onboarding đã bỏ theo yêu cầu)
 
         return v;
     }
