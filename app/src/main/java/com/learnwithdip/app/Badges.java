@@ -10,14 +10,14 @@ public class Badges {
     };
     public static final String[] DESCS = {
         "Bắt đầu hành trình",
-        "Thuộc 10+ từ",
-        "Thuộc 25+ từ",
-        "Thuộc 40+ từ",
-        "Thuộc 55+ từ",
-        "Thuộc hết 70 từ",
-        "70 từ + streak 7+ ngày"
+        "Thuộc 20+ từ",
+        "Thuộc 45+ từ",
+        "Thuộc 70+ từ",
+        "Thuộc 95+ từ",
+        "Thuộc hết 120 từ",
+        "120 từ + streak 7+ ngày"
     };
-    private static final int[] WORD_THRESH = {0, 10, 25, 40, 55, 70};
+    private static final int[] WORD_THRESH = {0, 20, 45, 70, 95, 120};
 
     /** Trả về index huy hiệu hiện tại (0..6). */
     public static int index(int learnedCount, int streak) {

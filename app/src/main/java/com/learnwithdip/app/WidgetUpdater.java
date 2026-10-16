@@ -9,12 +9,12 @@ import android.widget.RemoteViews;
 import java.util.Calendar;
 
 /**
- * Widget v4 (Minh 15/10, duyệt theo mockup 1): NHỎ lại như bản cũ (180x80dp,
- * mascot 56dp ôm bong bóng text) + TIẾNG ANH hoàn toàn.
+ * Widget v4.2 (Minh 16/10): cỡ Mimo 2x2 (180x180dp), mascot TO (110dp) trên
+ * widget, caption đậm + streak kiểu Mimo. TIẾNG ANH hoàn toàn.
  * Caption: câu nudge tiếng Anh ngắn, đổi mỗi ngày, TỐI ĐA 15 TỪ (words, không phải ký tự),
  * KHÔNG chi tiết từng ngày (không Day N / chủ đề / số từ).
  * Mascot 4 biểu cảm: sleepy (chưa học) / happy / main / party (streak >= 7).
- * Mascot TO 3x + mascot mọi trang là phần khác, KHÔNG build ở đây.
+ * Mascot đã bỏ khỏi mọi màn hình trong app — chỉ còn ở widget.
  */
 public class WidgetUpdater {
     /** Giới hạn cứng: tối đa 15 từ, thừa thì cắt + "…". */

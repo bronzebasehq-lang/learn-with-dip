@@ -14,9 +14,28 @@ import java.util.Set;
 public class Store {
     private static final String P = "loop_prefs";
     private final SharedPreferences sp;
+    private final Context ctx;
+    /** Phiên bản dữ liệu: v4.2 (versionCode 5) reset toàn bộ tiến độ học 1 lần. */
+    public static final int DATA_VERSION = 5;
 
     public Store(Context c) {
         sp = c.getSharedPreferences(P, Context.MODE_PRIVATE);
+        ctx = c.getApplicationContext();
+    }
+
+    /**
+     * Fresh start v4.2 (Minh chốt): lần đầu mở bản mới → reset TOÀN BỘ tiến độ
+     * học (Day 1, streak 0, không bài đã học, không từ khó). GIỮ onboarding
+     * (tên/mục tiêu) và cài đặt âm thanh.
+     */
+    public void ensureFreshStart() {
+        if (sp.getInt("data_version", 0) >= DATA_VERSION) return;
+        sp.edit()
+                .remove("learned").remove("wrong").remove("sr").remove("sr_migrated")
+                .remove("streak").remove("lastDate").remove("quiz").remove("starred")
+                .remove("onboardDate")
+                .putInt("data_version", DATA_VERSION)
+                .apply();
     }
 
     // ---- Onboarding ----
@@ -32,7 +51,7 @@ public class Store {
                 .apply();
     }
 
-    /** Ngày học hiện tại (1..7, tự xoay vòng sau 7 ngày). */
+    /** Ngày học hiện tại (1..N, tự xoay vòng theo số ngày có trong JSON). */
     public int getDayIndex() {
         String start = sp.getString("onboardDate", "");
         if (start.isEmpty()) {
@@ -46,7 +65,9 @@ public class Store {
             diff = 0;
         }
         if (diff < 0) diff = 0;
-        return (int) (diff % 7) + 1;
+        int total = Lessons.dayCount(ctx);
+        if (total <= 0) total = 1;
+        return (int) (diff % total) + 1;
     }
 
     public String getName() { return sp.getString("name", "bạn"); }
@@ -96,6 +117,27 @@ public class Store {
         int st = last.equals(LocalDate.now().minusDays(1).toString())
                 ? sp.getInt("streak", 0) + 1 : 1;
         sp.edit().putInt("streak", st).putString("lastDate", today).apply();
+    }
+
+    // ---- Âm thanh đúng/sai (v4.2, mặc định BẬT) ----
+    public boolean isSoundOn() { return sp.getBoolean("sound_on", true); }
+    public void setSoundOn(boolean on) { sp.edit().putBoolean("sound_on", on).apply(); }
+
+    // ---- Từ khó (v4.2): gắn sao → xuất hiện nhiều hơn trong ôn tập ----
+    public Set<String> getStarred() {
+        return new HashSet<>(sp.getStringSet("starred", new HashSet<String>()));
+    }
+
+    public boolean isStarred(String w) { return getStarred().contains(w); }
+
+    /** Đổi trạng thái sao, trả về trạng thái mới (true = đã gắn sao). */
+    public boolean toggleStarred(String w) {
+        Set<String> s = getStarred();
+        boolean now;
+        if (s.contains(w)) { s.remove(w); now = false; }
+        else { s.add(w); now = true; }
+        sp.edit().putStringSet("starred", s).apply();
+        return now;
     }
 
     // ---- Quiz ----

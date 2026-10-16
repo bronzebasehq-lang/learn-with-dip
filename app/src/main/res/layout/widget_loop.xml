@@ -1,62 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget v4 (Minh 15/10, duyệt theo mockup 1): NHỎ lại như bản cũ — 180x80dp,
-     mascot 56dp ôm góc trái bong bóng text, caption TIẾNG ANH, tối đa ~15 TỪ.
-     Mascot vẽ sau bong bóng nên đè lên góc trái = ôm text. -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Widget v4.2: cỡ Mimo 2x2 (180x180dp), mascot TO trên widget, caption đậm + streak kiểu Mimo. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
-    android:padding="6dp">
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="8dp">
 
-    <!-- Bong bóng text: chừa chỗ bên trái cho mascot đè lên -->
-    <LinearLayout
-        android:id="@+id/w_bubble"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="2dp"
-        android:orientation="vertical"
-        android:background="@drawable/widget_bubble"
-        android:paddingStart="22dp"
-        android:paddingEnd="10dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
-
-        <TextView
-            android:id="@+id/w_caption"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Time to learn!"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:maxLines="2"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/w_streak"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:text="🔥 STREAK 0"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="#FDE68A" />
-    </LinearLayout>
-
-    <!-- Mascot NHỎ 56dp, đè lên góc dưới-trái của bong bóng = ôm text, hòa trộn với chữ -->
+    <!-- Mascot TO (110dp) — chỉ còn mascot ở widget, đã bỏ khỏi app -->
     <ImageView
         android:id="@+id/w_mascot"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginBottom="0dp"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
         android:src="@drawable/mascot_sleepy"
         android:contentDescription="Dip" />
-</RelativeLayout>
+
+    <TextView
+        android:id="@+id/w_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Time to learn!"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/w_streak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="🔥 STREAK 0"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#FDE68A"
+        android:gravity="center" />
+
+</LinearLayout>

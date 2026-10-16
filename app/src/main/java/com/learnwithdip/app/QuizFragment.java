@@ -9,29 +9,43 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Tab Ôn tập: flashcard đầy đủ format + quiz từ đã trả lời sai. */
+/**
+ * Tab Ôn tập (v4.2):
+ * - Flashcard: 1 từ / màn hình (thẻ đầy đủ: sao + loa + 3 ví dụ) + nút
+ *   "Đã thuộc ✓" + nút mũi tên tròn → (bỏ qua). Từ khó (★) xuất hiện 2 lần
+ *   và xếp trước để ôn nhiều hơn.
+ * - Quiz từ đã sai + từ khó: 1 câu / màn hình, 3 dạng câu hỏi trộn lẫn:
+ *   (1) chọn nghĩa, (2) điền từ vào câu, (3) chọn câu dùng từ đúng.
+ *   Chọn đáp án → Next → âm thanh đúng/sai + phản hồi → câu tiếp.
+ * KHÔNG còn mascot trong app (v4.2).
+ */
 public class QuizFragment extends Fragment {
 
     private LinearLayout box;
     private Store store;
-    /** Mascot trang Ôn tập (96dp) — THINKING ở flashcard, SURPRISED ở quiz, CHEERING/CELEBRATING ở kết quả. */
-    private View quizMascot;
 
     // Flashcard state
     private List<Lessons.Term> deck = new ArrayList<>();
     private int pos = 0;
 
     // Quiz state
-    private List<Lessons.Term> qTerms = new ArrayList<>();
+    private List<QItem> questions = new ArrayList<>();
     private int qi = 0, score = 0;
-    private boolean answered = false;
-    private Button[] opts = new Button[4];
-    private int correctOpt = 0;
-    private boolean quizMode = false;
+
+    /** 1 câu hỏi ôn tập: dạng + từ mục tiêu + câu hỏi + đáp án + đáp án đúng. */
+    private static class QItem {
+        static final int MEANING = 0, FILL_BLANK = 1, PICK_USAGE = 2;
+        int type;
+        Lessons.Term term;
+        String prompt;      // câu hỏi / câu điền chỗ trống / tiêu đề
+        String[] options;   // 4 đáp án
+        int answer;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inf, ViewGroup parent, Bundle s) {
@@ -44,29 +58,31 @@ public class QuizFragment extends Fragment {
 
     // ---------- Chế độ flashcard ----------
     private void showFlashcards() {
-        quizMode = false;
         box.removeAllViews();
         deck.clear();
+        List<Lessons.Term> starred = new ArrayList<>();
+        List<Lessons.Term> rest = new ArrayList<>();
         for (Lessons.Day d : Lessons.all(getActivity()))
             for (Lessons.Term t : d.terms)
-                if (!store.getLearned().contains(t.word)) deck.add(t);
-        Collections.shuffle(deck);
+                if (!store.getLearned().contains(t.word)) {
+                    if (store.isStarred(t.word)) starred.add(t);
+                    else rest.add(t);
+                }
+        Collections.shuffle(rest);
+        // Từ khó xếp trước + xuất hiện 2 lần (ôn nhiều hơn).
+        deck.addAll(starred);
+        deck.addAll(starred);
+        deck.addAll(rest);
         pos = 0;
 
         TextView tvTitle = UiKit.text(getActivity(), "\uD83D\uDCDD Ôn tập flashcard",
                 20, 0xFFFFFFFF, true);
         box.addView(tvTitle);
 
-        // Container riêng cho thẻ (để nút quiz từ sai không bị xóa khi lật thẻ)
         LinearLayout cardBox = new LinearLayout(getActivity());
         cardBox.setOrientation(LinearLayout.VERTICAL);
         cardBox.setId(View.generateViewId());
         box.addView(cardBox);
-
-        // Mascot 96dp sau cardBox (giữ cardBox ở index 1 cho cardBox()).
-        quizMascot = MascotView.create(getActivity(), MascotView.Mood.THINKING, 96,
-                "Ôn lại cho chắc nhé! • Review time!");
-        box.addView(quizMascot);
 
         if (deck.isEmpty()) {
             TextView tvDone = UiKit.text(getActivity(),
@@ -78,11 +94,12 @@ public class QuizFragment extends Fragment {
             renderCard(cardBox);
         }
 
-        // Nút quiz từ sai
+        // Nút quiz từ sai + từ khó
         int wrongN = store.getWrong().size();
-        if (wrongN > 0) {
+        int starN = store.getStarred().size();
+        if (wrongN > 0 || starN > 0) {
             Button bWrong = new Button(getActivity());
-            bWrong.setText("📝 Kiểm tra " + wrongN + " từ đã sai");
+            bWrong.setText("📝 Kiểm tra " + (wrongN + starN) + " từ (đã sai + từ khó)");
             bWrong.setBackgroundResource(R.drawable.btn_primary);
             bWrong.setTextColor(0xFFFFFFFF);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -99,16 +116,12 @@ public class QuizFragment extends Fragment {
         return (LinearLayout) box.getChildAt(1);
     }
 
-    private void renderCard() {
-        renderCard(cardBox());
-    }
-
     private void renderCard(LinearLayout cardBox) {
         cardBox.removeAllViews();
 
         if (pos >= deck.size()) {
             TextView tvDone = UiKit.text(getActivity(),
-                    "Xong! Bạn đã ôn " + deck.size() + " từ \uD83C\uDF89",
+                    "Xong! Bạn đã ôn " + deck.size() + " thẻ \uD83C\uDF89",
                     16, 0xFF9CA3AF, false);
             tvDone.setGravity(Gravity.CENTER);
             cardBox.addView(tvDone);
@@ -122,100 +135,176 @@ public class QuizFragment extends Fragment {
         cardBox.addView(tvProgress);
         cardBox.addView(UiKit.termCard(getActivity(), t));
 
-        LinearLayout row = new LinearLayout(getActivity());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        rlp.topMargin = UiKit.dp(getActivity(), 12);
-        rlp.bottomMargin = UiKit.dp(getActivity(), 16);
-        row.setLayoutParams(rlp);
-
-        Button bUnknown = new Button(getActivity());
-        bUnknown.setText("Chưa thuộc");
-        bUnknown.setBackgroundResource(R.drawable.btn_ghost);
-        bUnknown.setTextColor(0xFFFFFFFF);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        blp.rightMargin = UiKit.dp(getActivity(), 8);
-        bUnknown.setLayoutParams(blp);
-        bUnknown.setOnClickListener(x -> { pos++; renderCard(); });
-
         Button bKnown = new Button(getActivity());
         bKnown.setText("Đã thuộc ✓");
         bKnown.setBackgroundResource(R.drawable.btn_primary);
         bKnown.setTextColor(0xFFFFFFFF);
-        bKnown.setLayoutParams(new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        LinearLayout.LayoutParams klp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        klp.topMargin = UiKit.dp(getActivity(), 12);
+        bKnown.setLayoutParams(klp);
         bKnown.setOnClickListener(x -> {
             store.addLearned(t.word);
             store.scheduleNew(t.word);
             store.markStudied();
             WidgetUpdater.update(getActivity());
             pos++;
-            renderCard();
+            renderCard(cardBox);
         });
+        cardBox.addView(bKnown);
 
-        row.addView(bUnknown);
-        row.addView(bKnown);
-        cardBox.addView(row);
+        // Mũi tên → = bỏ qua thẻ này (chưa thuộc), sang thẻ tiếp theo.
+        cardBox.addView(UiKit.nextArrow(getActivity(), "BỎ QUA", 0, x -> {
+            pos++;
+            renderCard(cardBox);
+        }));
     }
 
-    // ---------- Chế độ quiz từ sai ----------
+    // ---------- Chế độ quiz: 3 dạng câu hỏi ----------
     private void showQuiz() {
-        quizMode = true;
         box.removeAllViews();
-        qTerms.clear();
+        questions.clear();
+        List<Lessons.Term> pool = new ArrayList<>();
         for (String w : store.getWrong()) {
             Lessons.Term t = Lessons.find(getActivity(), w);
-            if (t != null) qTerms.add(t);
+            if (t != null) pool.add(t);
         }
-        if (qTerms.isEmpty()) { showFlashcards(); return; }
-        Collections.shuffle(qTerms);
-        if (qTerms.size() > 5) qTerms = qTerms.subList(0, 5);
+        for (String w : store.getStarred()) {
+            Lessons.Term t = Lessons.find(getActivity(), w);
+            if (t != null && !pool.contains(t)) pool.add(t);
+        }
+        Collections.shuffle(pool);
+        if (pool.size() > 8) pool = pool.subList(0, 8);
+        if (pool.isEmpty()) { showFlashcards(); return; }
+
+        // 1 từ = 1 câu hỏi, dạng câu hỏi xoay vòng theo thứ tự ngẫu nhiên.
+        List<Integer> types = new ArrayList<>();
+        types.add(QItem.MEANING);
+        types.add(QItem.FILL_BLANK);
+        types.add(QItem.PICK_USAGE);
+        Collections.shuffle(types);
+        for (int i = 0; i < pool.size(); i++) {
+            QItem q = buildQuestion(pool.get(i), types.get(i % types.size()));
+            if (q != null) questions.add(q);
+        }
+        if (questions.isEmpty()) { showFlashcards(); return; }
         qi = 0; score = 0;
 
-        TextView tvTitle = UiKit.text(getActivity(), "📝 Ôn từ đã sai",
+        TextView tvTitle = UiKit.text(getActivity(), "📝 Ôn từ đã sai + từ khó",
                 20, 0xFFFFFFFF, true);
         box.addView(tvTitle);
-
-        // Mascot 96dp ở index 1 — renderQuestion/showQuizResult chỉ xóa từ index 2.
-        quizMascot = MascotView.create(getActivity(), MascotView.Mood.SURPRISED, 96,
-                "Trả lời thật chắc nhé! • You got this!");
-        box.addView(quizMascot);
         renderQuestion();
     }
 
-    private void renderQuestion() {
-        while (box.getChildCount() > 2) box.removeViewAt(2);
-        if (qi >= qTerms.size()) { showQuizResult(); return; }
-        answered = false;
-        Lessons.Term t = qTerms.get(qi);
-
-        TextView tvP = UiKit.text(getActivity(),
-                "Câu " + (qi + 1) + "/" + qTerms.size(), 14, 0xFF9CA3AF, false);
-        box.addView(tvP);
-        TextView tvW = UiKit.text(getActivity(), t.word, 24, 0xFFFFFFFF, true);
-        tvW.setGravity(Gravity.CENTER);
-        box.addView(tvW);
-        TextView tvIpa = UiKit.text(getActivity(), t.ipa + " · " + t.pos, 14, 0xFFC4B5FD, false);
-        tvIpa.setGravity(Gravity.CENTER);
-        box.addView(tvIpa);
-
-        // 4 đáp án: nghĩa đúng + 3 nghĩa gây nhiễu
-        List<Lessons.Term> pool = new ArrayList<>();
+    /** Dựng 1 câu hỏi theo dạng. Trả null nếu thiếu dữ liệu. */
+    private QItem buildQuestion(Lessons.Term t, int type) {
+        List<Lessons.Term> all = new ArrayList<>();
         for (Lessons.Day d : Lessons.all(getActivity()))
             for (Lessons.Term x : d.terms)
-                if (!x.word.equals(t.word)) pool.add(x);
-        Collections.shuffle(pool);
-        List<Lessons.Term> options = new ArrayList<>();
-        options.add(t);
-        for (int i = 0; i < 3 && i < pool.size(); i++) options.add(pool.get(i));
-        Collections.shuffle(options);
+                if (!x.word.equals(t.word)) all.add(x);
+        Collections.shuffle(all);
+        if (all.size() < 3) return null;
 
-        for (int i = 0; i < options.size(); i++) {
+        QItem q = new QItem();
+        q.type = type;
+        q.term = t;
+        if (type == QItem.MEANING) {
+            q.prompt = t.word;
+            List<String> opts = new ArrayList<>();
+            opts.add(t.meaning);
+            for (int i = 0; i < 3; i++) opts.add(all.get(i).meaning);
+            Collections.shuffle(opts);
+            q.options = opts.toArray(new String[0]);
+            for (int i = 0; i < q.options.length; i++)
+                if (q.options[i].equals(t.meaning)) q.answer = i;
+        } else if (type == QItem.FILL_BLANK) {
+            String ex = pickExample(t);
+            if (ex == null) return null;
+            q.prompt = blankWord(ex, t.word);
+            if (q.prompt == null) return null;
+            List<String> opts = new ArrayList<>();
+            opts.add(t.word);
+            for (int i = 0; i < 3; i++) opts.add(all.get(i).word);
+            Collections.shuffle(opts);
+            q.options = opts.toArray(new String[0]);
+            for (int i = 0; i < q.options.length; i++)
+                if (q.options[i].equals(t.word)) q.answer = i;
+        } else { // PICK_USAGE
+            String good = pickExample(t);
+            if (good == null) return null;
+            q.prompt = "Câu nào dùng từ \"" + t.word + "\" ĐÚNG?";
+            List<String> opts = new ArrayList<>();
+            opts.add(good);
+            for (int i = 0; i < 3; i++) {
+                String bad = pickExample(all.get(i));
+                if (bad != null) opts.add(bad);
+            }
+            if (opts.size() < 4) return null;
+            Collections.shuffle(opts);
+            q.options = opts.toArray(new String[0]);
+            for (int i = 0; i < q.options.length; i++)
+                if (q.options[i].equals(good)) q.answer = i;
+        }
+        return q;
+    }
+
+    /** Lấy 1 câu ví dụ của từ (ưu tiên examples[], fallback example). */
+    private String pickExample(Lessons.Term t) {
+        if (t.examples != null && !t.examples.isEmpty())
+            return t.examples.get((int) (Math.random() * t.examples.size()));
+        return t.example;
+    }
+
+    /** Thay lần xuất hiện đầu tiên của từ mục tiêu trong câu bằng "___". */
+    private String blankWord(String sentence, String word) {
+        int idx = sentence.toLowerCase().indexOf(word.toLowerCase());
+        if (idx < 0) return null;
+        return sentence.substring(0, idx) + "___" + sentence.substring(idx + word.length());
+    }
+
+    private void renderQuestion() {
+        while (box.getChildCount() > 1) box.removeViewAt(1);
+        if (qi >= questions.size()) { showQuizResult(); return; }
+        QItem q = questions.get(qi);
+
+        TextView tvP = UiKit.text(getActivity(),
+                "Câu " + (qi + 1) + "/" + questions.size(), 14, 0xFF9CA3AF, false);
+        box.addView(tvP);
+
+        if (q.type == QItem.MEANING) {
+            TextView tvW = UiKit.text(getActivity(), q.prompt, 24, 0xFFFFFFFF, true);
+            tvW.setGravity(Gravity.CENTER);
+            box.addView(tvW);
+            TextView tvIpa = UiKit.text(getActivity(),
+                    q.term.ipa + " · " + q.term.pos, 14, 0xFFC4B5FD, false);
+            tvIpa.setGravity(Gravity.CENTER);
+            box.addView(tvIpa);
+            TextView tvHint = UiKit.text(getActivity(), "Chọn nghĩa đúng:",
+                    15, 0xFF9CA3AF, false);
+            box.addView(tvHint);
+        } else if (q.type == QItem.FILL_BLANK) {
+            TextView tvS = UiKit.text(getActivity(), "Điền từ vào chỗ trống:",
+                    15, 0xFF9CA3AF, false);
+            box.addView(tvS);
+            TextView tvSent = UiKit.text(getActivity(), q.prompt, 18, 0xFFFFFFFF, true);
+            box.addView(tvSent);
+        } else {
+            TextView tvS = UiKit.text(getActivity(), q.prompt, 18, 0xFFFFFFFF, true);
+            box.addView(tvS);
+        }
+
+        final Button[] opts = new Button[q.options.length];
+        final int[] picked = {-1};
+        final boolean[] answered = {false};
+        final LinearLayout feedbackBox = new LinearLayout(getActivity());
+        feedbackBox.setOrientation(LinearLayout.VERTICAL);
+        final LinearLayout arrowSlot = new LinearLayout(getActivity());
+        arrowSlot.setOrientation(LinearLayout.VERTICAL);
+
+        for (int i = 0; i < q.options.length; i++) {
             final int idx = i;
             Button b = new Button(getActivity());
-            b.setText((char) ('A' + i) + ". " + options.get(i).meaning);
+            b.setText((char) ('A' + i) + ". " + q.options[i]);
             b.setBackgroundResource(R.drawable.btn_ghost);
             b.setTextColor(0xFFFFFFFF);
             b.setAllCaps(false);
@@ -223,42 +312,68 @@ public class QuizFragment extends Fragment {
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.topMargin = UiKit.dp(getActivity(), 8);
             b.setLayoutParams(lp);
-            b.setOnClickListener(x -> answer(idx));
+            b.setOnClickListener(x -> {
+                if (answered[0]) return;
+                picked[0] = idx;
+                for (int k = 0; k < opts.length; k++)
+                    opts[k].setBackgroundResource(k == idx
+                            ? R.drawable.btn_primary : R.drawable.btn_ghost);
+            });
             opts[i] = b;
             box.addView(b);
-            if (options.get(i).word.equals(t.word)) correctOpt = i;
         }
-    }
 
-    private void answer(int idx) {
-        if (answered) return;
-        answered = true;
-        Lessons.Term t = qTerms.get(qi);
-        for (Button b : opts) if (b != null) b.setEnabled(false);
-        opts[correctOpt].setBackgroundResource(R.drawable.btn_primary);
-        if (idx == correctOpt) {
-            score++;
-            store.removeWrong(t.word);
-        } else {
-            opts[idx].setBackgroundColor(0xFFEF4444);
-        }
-        store.markStudied();
+        box.addView(feedbackBox);
+        box.addView(arrowSlot);
+        arrowSlot.addView(UiKit.nextArrow(getActivity(), "TRẢ LỜI", 0, x -> {
+            if (answered[0]) { // đã có phản hồi → sang câu tiếp
+                qi++;
+                renderQuestion();
+                return;
+            }
+            if (picked[0] < 0) {
+                Toast.makeText(getActivity(), "Chọn đáp án đã nhé",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            answered[0] = true;
+            boolean correct = picked[0] == q.answer;
+            if (correct) {
+                score++;
+                SoundFx.correct(getActivity());
+                if (q.type == QItem.MEANING) store.removeWrong(q.term.word);
+            } else {
+                SoundFx.wrong(getActivity());
+                if (q.type == QItem.MEANING) store.addWrong(q.term.word);
+            }
+            store.markStudied();
+            for (Button b : opts) b.setEnabled(false);
+            opts[q.answer].setBackgroundResource(R.drawable.btn_primary);
+            if (!correct) opts[picked[0]].setBackgroundColor(0xFFEF4444);
 
-        Button bNext = new Button(getActivity());
-        bNext.setText(qi + 1 >= qTerms.size() ? "Xem kết quả" : "Câu tiếp →");
-        bNext.setBackgroundResource(R.drawable.btn_primary);
-        bNext.setTextColor(0xFFFFFFFF);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = UiKit.dp(getActivity(), 12);
-        lp.bottomMargin = UiKit.dp(getActivity(), 24);
-        bNext.setLayoutParams(lp);
-        bNext.setOnClickListener(x -> { qi++; renderQuestion(); });
-        box.addView(bNext);
+            TextView tvFb = UiKit.text(getActivity(),
+                    correct ? "✓ Chính xác!" : "✗ Chưa đúng! Đáp án đúng: "
+                            + (char) ('A' + q.answer) + ". " + q.options[q.answer],
+                    17, correct ? 0xFF4ADE80 : 0xFFF87171, true);
+            tvFb.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            flp.topMargin = UiKit.dp(getActivity(), 14);
+            tvFb.setLayoutParams(flp);
+            feedbackBox.addView(tvFb);
+
+            arrowSlot.removeAllViews();
+            arrowSlot.addView(UiKit.nextArrow(getActivity(),
+                    qi + 1 >= questions.size() ? "XEM KẾT QUẢ" : "CÂU TIẾP",
+                    correct ? 1 : 2, y -> {
+                        qi++;
+                        renderQuestion();
+                    }));
+        }));
     }
 
     private void showQuizResult() {
-        while (box.getChildCount() > 2) box.removeViewAt(2);
+        while (box.getChildCount() > 1) box.removeViewAt(1);
         store.incQuiz();
         WidgetUpdater.update(getActivity());
 
@@ -267,7 +382,7 @@ public class QuizFragment extends Fragment {
         int bi = Badges.index(learned, streak);
 
         TextView tvScore = UiKit.text(getActivity(),
-                "\uD83C\uDF89 Điểm: " + score + "/" + qTerms.size(), 22, 0xFFFFFFFF, true);
+                "\uD83C\uDF89 Điểm: " + score + "/" + questions.size(), 22, 0xFFFFFFFF, true);
         tvScore.setGravity(Gravity.CENTER);
         box.addView(tvScore);
 
@@ -282,18 +397,6 @@ public class QuizFragment extends Fragment {
                 15, 0xFFC4B5FD, false);
         tvNext.setGravity(Gravity.CENTER);
         box.addView(tvNext);
-
-        TextView tvNudge = UiKit.text(getActivity(),
-                "\uD83E\uDD16 Dip: \"" + UiKit.randomNudge() + "\"",
-                15, 0xFF9CA3AF, false);
-        tvNudge.setGravity(Gravity.CENTER);
-        box.addView(tvNudge);
-
-        // Mascot ăn mừng / cổ vũ theo điểm (giữ ở index 1, trên kết quả).
-        boolean perfect = !qTerms.isEmpty() && score == qTerms.size();
-        MascotView.update(quizMascot,
-                perfect ? MascotView.Mood.CELEBRATING : MascotView.Mood.CHEERING,
-                perfect ? "Xuất sắc! • Perfect!" : "Cố lên! • Keep going!");
 
         Button bBack = new Button(getActivity());
         bBack.setText("← Về flashcard");

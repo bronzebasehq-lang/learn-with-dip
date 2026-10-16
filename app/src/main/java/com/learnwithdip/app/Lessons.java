@@ -12,6 +12,9 @@ public class Lessons {
 
     public static class Term {
         public String word, ipa, pos, meaning, example, translation, audio;
+        /** 3 câu ví dụ (v4.2): ngữ cảnh công việc / đời sống / tech + dịch từng câu. */
+        public List<String> examples = new ArrayList<>();
+        public List<String> exampleTranslations = new ArrayList<>();
     }
 
     public static class QuizQ {
@@ -26,6 +29,9 @@ public class Lessons {
         public List<Term> terms = new ArrayList<>();
         public String reading, readingVi;
         public List<QuizQ> quiz = new ArrayList<>();
+        /** Đoạn đọc hiểu thứ 2 (v4.2): ôn lại từ đã học + quiz riêng (2 câu). */
+        public String reading2 = "", reading2Vi = "";
+        public List<QuizQ> quiz2 = new ArrayList<>();
     }
 
     private static List<Day> cache;
@@ -57,6 +63,14 @@ public class Lessons {
                     term.example = t.getString("example");
                     term.translation = t.getString("translation");
                     term.audio = t.getString("audio");
+                    if (t.has("examples")) {
+                        JSONArray exs = t.getJSONArray("examples");
+                        for (int k = 0; k < exs.length(); k++) term.examples.add(exs.getString(k));
+                    }
+                    if (t.has("example_translations")) {
+                        JSONArray trs = t.getJSONArray("example_translations");
+                        for (int k = 0; k < trs.length(); k++) term.exampleTranslations.add(trs.getString(k));
+                    }
                     day.terms.add(term);
                 }
                 day.reading = d.getString("reading");
@@ -72,6 +86,21 @@ public class Lessons {
                     qq.answer = q.getInt("answer");
                     day.quiz.add(qq);
                 }
+                if (d.has("reading2")) day.reading2 = d.getString("reading2");
+                if (d.has("reading2_vi")) day.reading2Vi = d.getString("reading2_vi");
+                if (d.has("quiz2")) {
+                    JSONArray quiz2 = d.getJSONArray("quiz2");
+                    for (int j = 0; j < quiz2.length(); j++) {
+                        JSONObject q = quiz2.getJSONObject(j);
+                        QuizQ qq = new QuizQ();
+                        qq.q = q.getString("q");
+                        JSONArray opts = q.getJSONArray("options");
+                        qq.options = new String[opts.length()];
+                        for (int k = 0; k < opts.length(); k++) qq.options[k] = opts.getString(k);
+                        qq.answer = q.getInt("answer");
+                        day.quiz2.add(qq);
+                    }
+                }
                 cache.add(day);
             }
         } catch (Exception e) {
@@ -80,7 +109,12 @@ public class Lessons {
         return cache;
     }
 
-    /** Day theo chỉ số 1..7 (tự xoay vòng). */
+    /** Số ngày học hiện có (đọc từ JSON, không hardcode). */
+    public static int dayCount(Context c) {
+        return all(c).size();
+    }
+
+    /** Day theo chỉ số 1..N (tự xoay vòng). */
     public static Day get(Context c, int dayIndex1) {
         List<Day> days = all(c);
         if (days.isEmpty()) return null;

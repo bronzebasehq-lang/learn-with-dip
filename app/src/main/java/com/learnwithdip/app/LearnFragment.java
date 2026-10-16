@@ -9,29 +9,31 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tab Học (v4, Minh duyệt mockup 1-2-3 ngày 15/10):
- * Phase A — Flashcard 1 TỪ / LẦN: từ to + IPA + nghĩa Việt + loa + 1 ví dụ + NEXT.
- * Phase B — Trang ôn tập: danh sách từ vừa học (tiếng Anh chính + giải thích tiếng Việt)
- *              + nút START QUIZ.
- * Phase C — Đoạn đọc hiểu + dịch + quiz kiểm tra (giữ như cũ).
+ * Tab Học (v4.2):
+ * Phase A — 1 TỪ / MÀN HÌNH: thẻ từ (từ + sao + loa + IPA + nghĩa + 3 ví dụ)
+ *              + nút mũi tên tròn → sang từ tiếp theo.
+ * Phase B — Trang ôn tập: danh sách từ vừa học + nút START QUIZ.
+ * Phase C — ĐỌC HIỂU (phần quan trọng nhất, giữ format cũ + thêm đoạn 2):
+ *   Đoạn 1 (1 màn hình) → Quiz 1: 1 câu / màn hình (chọn đáp án → Next →
+ *   âm thanh đúng/sai + phản hồi → câu tiếp) → Đoạn 2 (ôn từ đã học) →
+ *   Quiz 2 (2 câu, cùng luồng) → Kết quả.
  * Trên cùng: khối "Ôn tập đến hạn" (spaced repetition 1/3/7 ngày) nếu có từ đến hạn.
+ * KHÔNG còn mascot trong app (v4.2).
  */
 public class LearnFragment extends Fragment {
 
     private Lessons.Day lesson;
     private Store store;
-    private List<Button[]> optRows = new ArrayList<>();
-    private int[] picked;
-    private boolean submitted = false;
     private LinearLayout box;
     private LinearLayout phaseBox;
     private LinearLayout resultBox;
-    /** Mascot hero 3x (mockup 4) ở đầu trang Học — đổi biểu cảm theo phase. */
-    private View heroView;
+    /** Day mở lại từ "Xem lại bài cũ" (Hồ sơ). -1 = bài hôm nay. */
+    private int overrideDay = -1;
 
     // Flashcard state
     private int cardIndex = 0;
@@ -41,12 +43,25 @@ public class LearnFragment extends Fragment {
     private int duePos = 0;
     private LinearLayout dueBlock;
 
+    // Phase C state
+    private int score = 0;
+    private int totalQuestions = 0;
+
+    public static LearnFragment forDay(int day) {
+        LearnFragment f = new LearnFragment();
+        Bundle b = new Bundle();
+        b.putInt("day", day);
+        f.setArguments(b);
+        return f;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inf, ViewGroup parent, Bundle s) {
         View v = inf.inflate(R.layout.fragment_learn, parent, false);
         box = v.findViewById(R.id.lesson_box);
         store = new Store(getActivity());
-        int dayIdx = store.getDayIndex();
+        if (getArguments() != null) overrideDay = getArguments().getInt("day", -1);
+        int dayIdx = overrideDay > 0 ? overrideDay : store.getDayIndex();
         lesson = Lessons.get(getActivity(), dayIdx);
         if (lesson == null) return v;
 
@@ -54,16 +69,17 @@ public class LearnFragment extends Fragment {
         TextView tvTitle = UiKit.text(getActivity(),
                 "Day " + lesson.day + ": " + lesson.topic, 22, 0xFFFFFFFF, true);
         box.addView(tvTitle);
-        TextView tvSub = UiKit.text(getActivity(),
-                "Chào " + store.getName() + "! Bài học hôm nay có 10 thuật ngữ mới \uD83C\uDF93",
-                14, 0xFF9CA3AF, false);
-        box.addView(tvSub);
-
-        // Mascot hero TO 3x (168dp = 3x widget 56dp, mockup 4): đĩa glow tím +
-        // bong bóng "Let's learn! • Học thôi nào!", sau tiêu đề, không che nội dung.
-        heroView = MascotView.create(getActivity(), MascotView.Mood.WAVING, 168,
-                "Let's learn! • Học thôi nào!");
-        box.addView(heroView);
+        if (overrideDay > 0) {
+            TextView tvRe = UiKit.text(getActivity(),
+                    "Đang xem lại bài cũ — học lại để ôn, không tính vào streak hôm nay.",
+                    14, 0xFFF59E0B, false);
+            box.addView(tvRe);
+        } else {
+            TextView tvSub = UiKit.text(getActivity(),
+                    "Chào " + store.getName() + "! Bài học hôm nay có 10 thuật ngữ mới \uD83C\uDF93",
+                    14, 0xFF9CA3AF, false);
+            box.addView(tvSub);
+        }
 
         // Khối ôn tập đến hạn (spaced repetition) — chỉ hiện khi có từ đến hạn
         List<String> dueWords = store.getDueReviews();
@@ -72,7 +88,7 @@ public class LearnFragment extends Fragment {
             Lessons.Term t = Lessons.find(getActivity(), w);
             if (t != null) dueTerms.add(t);
         }
-        if (!dueTerms.isEmpty()) {
+        if (!dueTerms.isEmpty() && overrideDay <= 0) {
             dueBlock = new LinearLayout(getActivity());
             dueBlock.setOrientation(LinearLayout.VERTICAL);
             dueBlock.setBackgroundResource(R.drawable.card_bg);
@@ -118,19 +134,15 @@ public class LearnFragment extends Fragment {
         return v;
     }
 
-    // ---------- Phase A: Flashcard 1 từ / lần ----------
+    // ---------- Phase A: 1 từ / màn hình ----------
     private void showFlashcard() {
         phaseBox.removeAllViews();
-        if (cardIndex == 0) {
-            MascotView.update(heroView, MascotView.Mood.WAVING, "Let's learn! • Học thôi nào!");
-        }
         if (cardIndex >= lesson.terms.size()) {
             showReview();
             return;
         }
         Lessons.Term t = lesson.terms.get(cardIndex);
 
-        // Tiến độ "Word X of 10" + thanh tiến độ
         TextView tvProgress = UiKit.text(getActivity(),
                 "Word " + (cardIndex + 1) + " of " + lesson.terms.size(),
                 16, 0xFFC4B5FD, true);
@@ -161,31 +173,21 @@ public class LearnFragment extends Fragment {
         bar.addView(rest);
         phaseBox.addView(bar);
 
-        // Thẻ từ duy nhất (từ + loa + IPA + loại từ + Nghĩa + Ví dụ + Dịch)
+        // Thẻ từ duy nhất (từ + sao + loa + IPA + loại từ + Nghĩa + 3 Ví dụ + Dịch)
         phaseBox.addView(UiKit.termCard(getActivity(), t));
 
-        // Nút NEXT
-        Button bNext = new Button(getActivity());
+        // Nút mũi tên tròn → sang từ tiếp theo (từ cuối → sang trang ôn tập)
         boolean last = cardIndex == lesson.terms.size() - 1;
-        bNext.setText(last ? "XEM ÔN TẬP \u2192" : "NEXT \u2192");
-        bNext.setBackgroundResource(R.drawable.btn_primary);
-        bNext.setTextColor(0xFFFFFFFF);
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        nlp.topMargin = UiKit.dp(getActivity(), 16);
-        nlp.bottomMargin = UiKit.dp(getActivity(), 24);
-        bNext.setLayoutParams(nlp);
-        bNext.setOnClickListener(x -> {
-            cardIndex++;
-            showFlashcard();
-        });
-        phaseBox.addView(bNext);
+        phaseBox.addView(UiKit.nextArrow(getActivity(),
+                last ? "ÔN TẬP" : "NEXT", 0, x -> {
+                    cardIndex++;
+                    showFlashcard();
+                }));
     }
 
     // ---------- Phase B: Trang ôn tập ----------
     private void showReview() {
         phaseBox.removeAllViews();
-        MascotView.update(heroView, MascotView.Mood.THINKING, "Ôn lại nhé! • Review time!");
 
         TextView tvHead = UiKit.text(getActivity(), "REVIEW", 16, 0xFFC4B5FD, true);
         LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
@@ -234,77 +236,144 @@ public class LearnFragment extends Fragment {
         qlp.topMargin = UiKit.dp(getActivity(), 16);
         qlp.bottomMargin = UiKit.dp(getActivity(), 24);
         bQuiz.setLayoutParams(qlp);
-        bQuiz.setOnClickListener(x -> showQuizSection());
+        bQuiz.setOnClickListener(x -> {
+            score = 0;
+            totalQuestions = lesson.quiz.size() + lesson.quiz2.size();
+            showReading(lesson.reading, lesson.readingVi, "Đoạn đọc hiểu 1",
+                    () -> showQuestionFlow(lesson.quiz, 0,
+                            () -> showReading(lesson.reading2, lesson.reading2Vi,
+                                    "Đoạn đọc hiểu 2 — Ôn lại từ đã học",
+                                    () -> showQuestionFlow(lesson.quiz2, 0, this::showResult))));
+        });
         phaseBox.addView(bQuiz);
     }
 
-    // ---------- Phase C: Đoạn đọc hiểu + quiz (giữ như cũ) ----------
-    private void showQuizSection() {
+    // ---------- Phase C: Đọc hiểu — đoạn văn 1 màn hình riêng ----------
+    private void showReading(String passage, String translation, String title, Runnable next) {
         phaseBox.removeAllViews();
-        MascotView.update(heroView, MascotView.Mood.SURPRISED, "Sẵn sàng chưa? • Ready?");
-
-        // Đoạn đọc hiểu
-        phaseBox.addView(UiKit.sectionHeader(getActivity(), "\uD83D\uDCD6 Đoạn đọc hiểu"));
-        TextView tvReading = UiKit.text(getActivity(), lesson.reading, 16, 0xFFFFFFFF, false);
+        phaseBox.addView(UiKit.sectionHeader(getActivity(), "\uD83D\uDCD6 " + title));
+        TextView tvReading = UiKit.text(getActivity(), passage, 16, 0xFFFFFFFF, false);
         tvReading.setLineSpacing(UiKit.dp(getActivity(), 4), 1f);
         phaseBox.addView(tvReading);
 
         phaseBox.addView(UiKit.sectionHeader(getActivity(), "\uD83C\uDDFB\uD83C\uDDF3 Bản dịch"));
-        TextView tvReadingVi = UiKit.text(getActivity(), lesson.readingVi, 15, 0xFF9CA3AF, false);
+        TextView tvReadingVi = UiKit.text(getActivity(), translation, 15, 0xFF9CA3AF, false);
         tvReadingVi.setLineSpacing(UiKit.dp(getActivity(), 4), 1f);
         phaseBox.addView(tvReadingVi);
 
-        // Quiz kiểm tra đọc hiểu
-        phaseBox.addView(UiKit.sectionHeader(getActivity(), "✅ Kiểm tra đọc hiểu"));
-        picked = new int[lesson.quiz.size()];
-        for (int i = 0; i < picked.length; i++) picked[i] = -1;
-        for (int qi = 0; qi < lesson.quiz.size(); qi++) {
-            Lessons.QuizQ q = lesson.quiz.get(qi);
-            TextView tvQ = UiKit.text(getActivity(), (qi + 1) + ". " + q.q, 16, 0xFFFFFFFF, true);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        phaseBox.addView(UiKit.nextArrow(getActivity(), "LÀM BÀI", 0, x -> next.run()));
+    }
+
+    // ---------- Phase C: Quiz — 1 câu / màn hình, Next → âm thanh + phản hồi ----------
+    private void showQuestionFlow(List<Lessons.QuizQ> questions, int idx, Runnable onDone) {
+        phaseBox.removeAllViews();
+        if (idx >= questions.size()) {
+            onDone.run();
+            return;
+        }
+        Lessons.QuizQ q = questions.get(idx);
+
+        TextView tvP = UiKit.text(getActivity(),
+                "Câu " + (idx + 1) + " / " + questions.size(), 14, 0xFFC4B5FD, true);
+        LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        plp.topMargin = UiKit.dp(getActivity(), 16);
+        tvP.setLayoutParams(plp);
+        phaseBox.addView(tvP);
+
+        TextView tvQ = UiKit.text(getActivity(), q.q, 17, 0xFFFFFFFF, true);
+        LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        qlp.topMargin = UiKit.dp(getActivity(), 10);
+        tvQ.setLayoutParams(qlp);
+        phaseBox.addView(tvQ);
+
+        final Button[] opts = new Button[q.options.length];
+        final int[] picked = {-1};
+        final boolean[] answered = {false};
+        final LinearLayout feedbackBox = new LinearLayout(getActivity());
+        feedbackBox.setOrientation(LinearLayout.VERTICAL);
+        final LinearLayout arrowSlot = new LinearLayout(getActivity());
+        arrowSlot.setOrientation(LinearLayout.VERTICAL);
+
+        for (int oi = 0; oi < q.options.length; oi++) {
+            Button b = new Button(getActivity());
+            b.setText((char) ('A' + oi) + ". " + q.options[oi]);
+            b.setBackgroundResource(R.drawable.btn_ghost);
+            b.setTextColor(0xFFFFFFFF);
+            b.setAllCaps(false);
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.topMargin = UiKit.dp(getActivity(), 12);
-            tvQ.setLayoutParams(lp);
-            phaseBox.addView(tvQ);
-            Button[] opts = new Button[q.options.length];
-            final int qIdx = qi;
-            for (int oi = 0; oi < q.options.length; oi++) {
-                Button b = new Button(getActivity());
-                b.setText((char) ('A' + oi) + ". " + q.options[oi]);
-                b.setBackgroundResource(R.drawable.btn_ghost);
-                b.setTextColor(0xFFFFFFFF);
-                b.setAllCaps(false);
-                LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                blp.topMargin = UiKit.dp(getActivity(), 6);
-                b.setLayoutParams(blp);
-                final int oIdx = oi;
-                b.setOnClickListener(x -> {
-                    if (submitted) return;
-                    picked[qIdx] = oIdx;
-                    for (int k = 0; k < opts.length; k++)
-                        opts[k].setBackgroundResource(k == oIdx
-                                ? R.drawable.btn_primary : R.drawable.btn_ghost);
-                });
-                opts[oi] = b;
-                phaseBox.addView(b);
-            }
-            optRows.add(opts);
+            blp.topMargin = UiKit.dp(getActivity(), 6);
+            b.setLayoutParams(blp);
+            final int oIdx = oi;
+            b.setOnClickListener(x -> {
+                if (answered[0]) return;
+                picked[0] = oIdx;
+                for (int k = 0; k < opts.length; k++)
+                    opts[k].setBackgroundResource(k == oIdx
+                            ? R.drawable.btn_primary : R.drawable.btn_ghost);
+            });
+            opts[oi] = b;
+            phaseBox.addView(b);
         }
 
-        // Nút nộp bài
-        Button bSubmit = new Button(getActivity());
-        bSubmit.setText("NỘP BÀI");
-        bSubmit.setBackgroundResource(R.drawable.btn_primary);
-        bSubmit.setTextColor(0xFFFFFFFF);
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        slp.topMargin = UiKit.dp(getActivity(), 20);
-        bSubmit.setLayoutParams(slp);
-        bSubmit.setOnClickListener(x -> submit(store));
-        phaseBox.addView(bSubmit);
+        phaseBox.addView(feedbackBox);
+        phaseBox.addView(arrowSlot);
+        arrowSlot.addView(UiKit.nextArrow(getActivity(), "TRẢ LỜI", 0, x -> {
+            if (answered[0]) { // đã có phản hồi → sang câu tiếp
+                showQuestionFlow(questions, idx + 1, onDone);
+                return;
+            }
+            if (picked[0] < 0) {
+                Toast.makeText(getActivity(), "Chọn đáp án đã nhé",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            answered[0] = true;
+            boolean correct = picked[0] == q.answer;
+            if (correct) {
+                score++;
+                SoundFx.correct(getActivity());
+            } else {
+                SoundFx.wrong(getActivity());
+            }
+            for (Button b : opts) b.setEnabled(false);
+            opts[q.answer].setBackgroundResource(R.drawable.btn_primary);
+            if (!correct) opts[picked[0]].setBackgroundColor(0xFFEF4444);
 
-        // Hộp kết quả + khối kích thích học tiếp
+            feedbackBox.removeAllViews();
+            TextView tvFb = UiKit.text(getActivity(),
+                    correct ? "✓ Chính xác!" : "✗ Chưa đúng! Đáp án đúng: "
+                            + (char) ('A' + q.answer) + ". " + q.options[q.answer],
+                    17, correct ? 0xFF4ADE80 : 0xFFF87171, true);
+            tvFb.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            flp.topMargin = UiKit.dp(getActivity(), 14);
+            tvFb.setLayoutParams(flp);
+            feedbackBox.addView(tvFb);
+
+            arrowSlot.removeAllViews();
+            arrowSlot.addView(UiKit.nextArrow(getActivity(),
+                    idx + 1 >= questions.size() ? "TIẾP TỤC" : "CÂU TIẾP",
+                    correct ? 1 : 2, y -> showQuestionFlow(questions, idx + 1, onDone)));
+        }));
+    }
+
+    // ---------- Phase C: Kết quả ----------
+    private void showResult() {
+        phaseBox.removeAllViews();
+
+        // Ghi nhận học + thuộc 10 từ hôm nay + vào hàng đợi ôn ngắt quãng
+        if (overrideDay <= 0) store.markStudied();
+        for (Lessons.Term t : lesson.terms) {
+            store.addLearned(t.word);
+            store.scheduleNew(t.word);
+        }
+        store.incQuiz();
+        WidgetUpdater.update(getActivity());
+
         resultBox = new LinearLayout(getActivity());
         resultBox.setOrientation(LinearLayout.VERTICAL);
         resultBox.setBackgroundResource(R.drawable.card_bg);
@@ -315,50 +384,14 @@ public class LearnFragment extends Fragment {
         rlp.topMargin = UiKit.dp(getActivity(), 16);
         rlp.bottomMargin = UiKit.dp(getActivity(), 32);
         resultBox.setLayoutParams(rlp);
-        resultBox.setVisibility(View.GONE);
         phaseBox.addView(resultBox);
-    }
 
-    private void submit(Store store) {
-        if (submitted) return;
-        for (int p : picked) {
-            if (p < 0) {
-                android.widget.Toast.makeText(getActivity(),
-                        "Bạn chưa trả lời hết các câu hỏi", android.widget.Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-        submitted = true;
-        int score = 0;
-        for (int qi = 0; qi < lesson.quiz.size(); qi++) {
-            Lessons.QuizQ q = lesson.quiz.get(qi);
-            Button[] opts = optRows.get(qi);
-            for (Button b : opts) b.setEnabled(false);
-            opts[q.answer].setBackgroundResource(R.drawable.btn_primary);
-            if (picked[qi] == q.answer) {
-                score++;
-            } else {
-                opts[picked[qi]].setBackgroundColor(0xFFEF4444);
-            }
-        }
-
-        // Ghi nhận học + thuộc 10 từ hôm nay + vào hàng đợi ôn ngắt quãng
-        store.markStudied();
-        for (Lessons.Term t : lesson.terms) {
-            store.addLearned(t.word);
-            store.scheduleNew(t.word);
-        }
-        store.incQuiz();
-        WidgetUpdater.update(getActivity());
-
-        // Khối kết quả + kích thích học tiếp
-        resultBox.removeAllViews();
         int learned = store.learnedCount();
         int streak = store.getStreak();
         int bi = Badges.index(learned, streak);
 
         TextView tvScore = UiKit.text(getActivity(),
-                "\uD83C\uDF89 Điểm: " + score + "/" + lesson.quiz.size(), 22, 0xFFFFFFFF, true);
+                "\uD83C\uDF89 Điểm: " + score + "/" + totalQuestions, 22, 0xFFFFFFFF, true);
         tvScore.setGravity(android.view.Gravity.CENTER);
         resultBox.addView(tvScore);
 
@@ -379,13 +412,6 @@ public class LearnFragment extends Fragment {
         tvNext.setLayoutParams(blp);
         resultBox.addView(tvNext);
 
-        TextView tvNudge = UiKit.text(getActivity(),
-                "\uD83E\uDD16 Dip: \"" + UiKit.randomNudge() + "\"",
-                15, 0xFF9CA3AF, false);
-        tvNudge.setGravity(android.view.Gravity.CENTER);
-        tvNudge.setLayoutParams(blp);
-        resultBox.addView(tvNudge);
-
         Button bMore = new Button(getActivity());
         bMore.setText("HỌC TIẾP \uD83D\uDCDD");
         bMore.setBackgroundResource(R.drawable.btn_primary);
@@ -396,9 +422,6 @@ public class LearnFragment extends Fragment {
         bMore.setLayoutParams(mlp);
         bMore.setOnClickListener(x -> ((MainActivity) getActivity()).goQuiz());
         resultBox.addView(bMore);
-
-        resultBox.setVisibility(View.VISIBLE);
-        MascotView.update(heroView, MascotView.Mood.CELEBRATING, "Giỏi lắm! • Great job!");
     }
 
     // ---------- Ôn tập đến hạn (spaced repetition) ----------
@@ -409,9 +432,6 @@ public class LearnFragment extends Fragment {
 
     private void renderDueCard() {
         phaseBox.removeAllViews();
-        if (duePos == 0) {
-            MascotView.update(heroView, MascotView.Mood.THINKING, "Ôn lại nhé! • Review time!");
-        }
         if (duePos >= dueTerms.size()) {
             TextView tvDone = UiKit.text(getActivity(),
                     "Xong! Đã ôn " + dueTerms.size() + " từ \uD83D\uDD01",

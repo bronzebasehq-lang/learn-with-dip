@@ -10,15 +10,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Mascot Dip vẫy tay chào (v4.1) — đứng trên các bước onboarding -->
-        <ImageView
-            android:id="@+id/onboarding_mascot"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:layout_gravity="center"
-            android:layout_marginBottom="8dp"
-            android:src="@drawable/mascot_happy"
-            android:contentDescription="Dip" />
+        <!-- (Mascot đã bỏ ở v4.2.) -->
 
         <!-- Bước 1: tên -->
         <LinearLayout
